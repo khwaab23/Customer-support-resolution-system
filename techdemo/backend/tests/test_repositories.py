@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 from app.models.customer import Customer
 from app.models.order import Order
 from app.repositories.customer_repository import CustomerRepository
+from app.repositories.order_item_repository import OrderItemRepository
 from app.repositories.order_repository import OrderRepository
+from app.repositories.payment_repository import PaymentRepository
+from app.repositories.refund_repository import RefundRepository
+from app.repositories.return_repository import ReturnRepository
 
 
 def render_postgresql(statement: object) -> str:
@@ -118,3 +122,23 @@ def test_order_repository_returns_order_by_id_or_none() -> None:
 
     assert repository.get_by_id("order-004") is expected
     assert repository.get_by_id("missing") is None
+
+
+def test_financial_repositories_filter_and_sort_by_order_id() -> None:
+    session = Mock(spec=Session)
+    session.scalars.return_value = []
+
+    PaymentRepository(session).list_by_order_id("order-1")
+    ReturnRepository(session).list_by_order_id("order-1")
+    RefundRepository(session).list_by_order_id("order-1")
+    OrderItemRepository(session).list_by_order_id("order-1")
+
+    queries = [render_postgresql(call.args[0]) for call in session.scalars.call_args_list]
+    assert "WHERE payments.order_id = 'order-1'" in queries[0]
+    assert "ORDER BY payments.captured_at DESC, payments.payment_id ASC" in queries[0]
+    assert "WHERE returns.order_id = 'order-1'" in queries[1]
+    assert "ORDER BY returns.requested_at DESC, returns.return_id ASC" in queries[1]
+    assert "WHERE refunds.order_id = 'order-1'" in queries[2]
+    assert "ORDER BY refunds.created_at DESC, refunds.refund_id ASC" in queries[2]
+    assert "WHERE order_items.order_id = 'order-1'" in queries[3]
+    assert "ORDER BY order_items.order_item_id ASC" in queries[3]

@@ -7,6 +7,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.order import Order
+    from app.models.ticket import Ticket
 
 
 class Customer(Base):
@@ -23,3 +24,4 @@ class Customer(Base):
     account_status: Mapped[str] = mapped_column(String(30), nullable=False)
 
     orders: Mapped[list["Order"]] = relationship(back_populates="customer")
+    tickets: Mapped[list["Ticket"]] = relationship(back_populates="customer")

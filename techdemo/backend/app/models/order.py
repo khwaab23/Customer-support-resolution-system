@@ -8,6 +8,12 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.customer import Customer
+    from app.models.order_item import OrderItem
+    from app.models.payment import Payment
+    from app.models.refund import Refund
+    from app.models.return_record import ReturnRecord
+    from app.models.shipment import Shipment
+    from app.models.ticket import Ticket
 
 
 class Order(Base):
@@ -29,3 +35,9 @@ class Order(Base):
     total_minor: Mapped[int] = mapped_column(Integer, nullable=False)
 
     customer: Mapped["Customer"] = relationship(back_populates="orders")
+    items: Mapped[list["OrderItem"]] = relationship(back_populates="order")
+    payments: Mapped[list["Payment"]] = relationship(back_populates="order")
+    returns: Mapped[list["ReturnRecord"]] = relationship(back_populates="order")
+    refunds: Mapped[list["Refund"]] = relationship(back_populates="order")
+    shipments: Mapped[list["Shipment"]] = relationship(back_populates="order")
+    tickets: Mapped[list["Ticket"]] = relationship(back_populates="order")
