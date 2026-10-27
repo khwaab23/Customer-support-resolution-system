@@ -1,6 +1,10 @@
 alembic<2.0,>=1.14
 argon2-cffi<26.0,>=23.1
 fastapi<1.0,>=0.115
+langgraph<2.0,>=1.0
+langgraph-checkpoint-postgres<4.0,>=3.0
+chromadb<1.0,>=0.5
+openai<2.0,>=1.0
 pydantic-settings<3.0,>=2.0
 psycopg[binary]<4.0,>=3.2
 sqlalchemy<3.0,>=2.0

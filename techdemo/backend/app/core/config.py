@@ -31,6 +31,28 @@ class Settings(BaseSettings):
         "http://localhost:8001,"
         "http://127.0.0.1:8001"
     )
+    openai_api_key: str | None = None
+    rag_embedding_model: str = "text-embedding-3-small"
+    rag_collection_name: str = "techdemo_policy_chunks"
+    rag_persist_directory: str = ".chroma"
+    rag_chunk_size: int = Field(default=1800, ge=256, le=12_000)
+    rag_chunk_overlap: int = Field(default=200, ge=0, le=2_000)
+    rag_embedding_batch_size: int = Field(default=32, ge=1, le=256)
+    rag_retrieval_top_k: int = Field(default=5, ge=1, le=20)
+    rag_distance_threshold: float | None = Field(default=None, ge=0)
+    openai_agent_model: str = "gpt-4.1-mini"
+    agent_max_tool_rounds: int = Field(default=3, ge=1, le=8)
+    agent_max_tool_calls: int = Field(default=8, ge=1, le=20)
+    agent_tool_output_max_chars: int = Field(default=12_000, ge=1_000, le=50_000)
+    agent_request_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
+    agent_max_output_tokens: int = Field(default=1_200, ge=100, le=4_000)
+    agent_diagnostics_enabled: bool = False
+    workflow_checkpoint_schema: str = Field(
+        default="techdemo_workflow",
+        pattern=r"^[a-z_][a-z0-9_]{0,62}$",
+    )
+    workflow_recursion_limit: int = Field(default=12, ge=4, le=64)
+    workflow_dev_review_simulation_enabled: bool = False
 
     @property
     def cookie_secure(self) -> bool:

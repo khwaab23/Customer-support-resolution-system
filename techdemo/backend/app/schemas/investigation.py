@@ -159,6 +159,11 @@ class PolicyReference(BaseModel):
     topic: PolicyTopic
     source: str
     text: str = Field(min_length=1)
+    policy_id: str | None = None
+    document_title: str | None = None
+    policy_version: str | None = None
+    effective_date: date | None = None
+    section_heading: str | None = None
 
 
 class PolicyLookupResult(BaseModel):

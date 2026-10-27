@@ -1,5 +1,4 @@
 from datetime import date, datetime, timezone
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -16,6 +15,7 @@ from app.repositories.payment_repository import PaymentRepository
 from app.repositories.refund_repository import RefundRepository
 from app.repositories.return_repository import ReturnRepository
 from app.repositories.ticket_repository import TicketRepository
+from app.rag.models import PolicyRetrievalResult, RetrievedPolicyPassage, RetrievalStatus
 from app.schemas.investigation import (
     InvestigationOrderDetails,
     InvestigationOutcome,
@@ -233,26 +233,69 @@ def test_refund_tool_returns_existing_history_without_internal_approval_data() -
     assert "provider_reference" not in refund
 
 
-def test_policy_lookup_returns_documented_source_and_reports_ambiguity(tmp_path: Path) -> None:
-    policy_directory = tmp_path / "policies"
-    policy_directory.mkdir()
-    (policy_directory / "returns.md").write_text("Return rule A.", encoding="utf-8")
-    tool = PolicyLookupTool((policy_directory,))
+def test_policy_lookup_returns_semantic_source_and_reports_no_evidence() -> None:
+    retriever = Mock()
+    retriever.retrieve_policy_evidence.return_value = PolicyRetrievalResult(
+        query="return eligibility",
+        status=RetrievalStatus.FOUND,
+        passages=[
+            RetrievedPolicyPassage(
+                policy_id="NTE-POL-01",
+                document_title="Returns & Eligibility",
+                policy_version="1.0",
+                effective_date=date(2026, 10, 1),
+                section_heading="Standard window",
+                heading_path=("Returns & Eligibility", "Standard window"),
+                source_filename="returns_and_eligibility.md",
+                source_path="policies/returns_and_eligibility.md",
+                text="A customer may request a standard return within 30 calendar days.",
+                distance=0.1,
+            )
+        ],
+    )
+    tool = PolicyLookupTool(retriever)
 
     found = tool.lookup(PolicyTopic.RETURN, make_context())
 
     assert found.outcome is PolicyLookupOutcome.FOUND
-    assert found.policies[0].text == "Return rule A."
-    assert found.policies[0].source == "returns.md"
+    assert found.policies[0].source == "policies/returns_and_eligibility.md"
 
-    (policy_directory / "returns-addendum.md").write_text("Return rule B.", encoding="utf-8")
-    ambiguous = tool.lookup(PolicyTopic.RETURN, make_context())
+    retriever.retrieve_policy_evidence.return_value = PolicyRetrievalResult(
+        query="refund handling",
+        status=RetrievalStatus.NO_EVIDENCE,
+        missing_information=["No applicable policy evidence met the retrieval criteria."],
+    )
     missing = tool.lookup(PolicyTopic.REFUND, make_context())
 
-    assert ambiguous.outcome is PolicyLookupOutcome.AMBIGUOUS
-    assert len(ambiguous.policies) == 2
     assert missing.outcome is PolicyLookupOutcome.NOT_FOUND
     assert missing.missing_data[0].field == "policy:REFUND"
+
+
+def test_policy_lookup_rejects_semantically_retrieved_but_cross_topic_passages() -> None:
+    retriever = Mock()
+    retriever.retrieve_policy_evidence.return_value = PolicyRetrievalResult(
+        query="refund handling",
+        status=RetrievalStatus.FOUND,
+        passages=[
+            RetrievedPolicyPassage(
+                policy_id="NTE-POL-01",
+                document_title="Returns & Eligibility",
+                policy_version="1.0",
+                effective_date=date(2026, 10, 1),
+                section_heading="Standard window",
+                heading_path=("Returns & Eligibility", "Standard window"),
+                source_filename="returns_and_eligibility.md",
+                source_path="policies/returns_and_eligibility.md",
+                text="Return eligibility evidence.",
+                distance=0.1,
+            )
+        ],
+    )
+
+    result = PolicyLookupTool(retriever).lookup(PolicyTopic.REFUND, make_context())
+
+    assert result.outcome is PolicyLookupOutcome.NOT_FOUND
+    assert result.policies == []
 
 
 def test_investigate_ticket_assembles_structured_facts_and_policy_evidence() -> None:
