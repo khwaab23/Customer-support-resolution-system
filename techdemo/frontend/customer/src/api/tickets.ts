@@ -7,6 +7,8 @@ export type CustomerTicket = {
   message: string;
   status: string;
   created_at: string;
+  // Intentionally sanitized: no reviewer identity, notes, or workflow ID.
+  review_status?: string;
 };
 
 type CustomerTicketListResponse = {

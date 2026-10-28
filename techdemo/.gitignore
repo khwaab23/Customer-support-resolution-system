@@ -13,4 +13,7 @@ __pycache__/
 htmlcov/
 .chroma/
 backend/.chroma/
+node_modules/
+dist/
+*.tsbuildinfo
 

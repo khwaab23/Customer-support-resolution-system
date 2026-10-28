@@ -12,6 +12,7 @@ from app.schemas.agent import AgentInvestigationStatus, InvestigationAgentRespon
 from app.tools.context import CustomerInvestigationContext
 from app.workflows.state import (
     HumanReviewPayload,
+    AdminDecisionInput,
     ProposedResolution,
     ReviewOutcome,
     SafeReviewInput,
@@ -167,20 +168,35 @@ def human_review_interrupt_node(state: SupportWorkflowState) -> SupportWorkflowS
         policy_citations=result.policy_citations,
     )
     raw_review = interrupt(payload.model_dump(mode="json"))
-    review = SafeReviewInput.model_validate(raw_review)
-    status = (
-        WorkflowStatus.COMPLETED
-        if review.outcome is ReviewOutcome.ACKNOWLEDGED
-        else WorkflowStatus.NEEDS_MORE_INFORMATION
-    )
+    # A production admin decision is stored and validated before it reaches
+    # LangGraph.  The older SafeReviewInput remains only for explicit dev
+    # simulation, never for an admin HTTP request.
+    if isinstance(raw_review, dict) and "decision" in raw_review:
+        decision = AdminDecisionInput.model_validate(raw_review).decision
+        if decision not in {"APPROVE", "REJECT", "REQUEST_MORE_INFORMATION"}:
+            raise ValueError("Invalid persisted admin decision")
+        status = (
+            WorkflowStatus.COMPLETED
+            if decision in {"APPROVE", "REJECT"}
+            else WorkflowStatus.NEEDS_MORE_INFORMATION
+        )
+        reason = f"Authenticated administrator recorded {decision}. No refund execution occurred."
+    else:
+        review = SafeReviewInput.model_validate(raw_review)
+        status = (
+            WorkflowStatus.COMPLETED
+            if review.outcome is ReviewOutcome.ACKNOWLEDGED
+            else WorkflowStatus.NEEDS_MORE_INFORMATION
+        )
+        reason = (
+            "Trusted reviewer requested more information."
+            if review.outcome is ReviewOutcome.REQUEST_MORE_INFORMATION
+            else "Trusted reviewer acknowledged the proposed resolution."
+        )
     return _transition(
         state,
         "human_review_interrupt",
         workflow_status=status.value,
         requires_human_review=False,
-        human_review_reason=(
-            "Trusted reviewer requested more information."
-            if review.outcome is ReviewOutcome.REQUEST_MORE_INFORMATION
-            else "Trusted reviewer acknowledged the proposed resolution."
-        ),
+        human_review_reason=reason,
     )

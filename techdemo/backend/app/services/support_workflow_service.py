@@ -126,6 +126,56 @@ class SupportWorkflowService:
             )
         return dict(result)
 
+    def get_workflow_entry(self, workflow_id: str) -> WorkflowRegistryEntry | None:
+        """Routing lookup for trusted services; it is never caller authentication."""
+        return self._registry.get(workflow_id)
+
+    def is_waiting_for_human_review(self, workflow_id: str) -> bool:
+        entry = self._registry.get(workflow_id)
+        if entry is None:
+            return False
+        with self._checkpointer_factory(self._settings) as checkpointer:
+            graph = build_support_graph(self._dependencies(), checkpointer)
+            snapshot = graph.get_state(self._config(entry))
+        return bool(snapshot.next and "human_review_interrupt" in snapshot.next)
+
+    def get_workflow_status_for_admin(self, workflow_id: str) -> SupportWorkflowState | None:
+        """Inspection used after role validation by the admin API."""
+        entry = self._registry.get(workflow_id)
+        if entry is None:
+            return None
+        with self._checkpointer_factory(self._settings) as checkpointer:
+            graph = build_support_graph(self._dependencies(), checkpointer)
+            snapshot = graph.get_state(self._config(entry))
+        return dict(snapshot.values) if snapshot.values else None
+
+    def resume_admin_decision(
+        self,
+        workflow_id: str,
+        reviewer: TrustedReviewerContext,
+        decision: str,
+    ) -> SupportWorkflowState:
+        """Resume exactly the paused review node using a durable admin decision.
+
+        This intentionally does not use the development simulation switch or
+        registry consume flag. The durable review record serializes production
+        retries and retains a recoverable resume state if checkpoint I/O fails.
+        """
+        if not reviewer.is_admin:
+            raise WorkflowAccessError("Administrator authority is required.")
+        if decision not in {"APPROVE", "REJECT", "REQUEST_MORE_INFORMATION"}:
+            raise WorkflowConflictError("Invalid review decision.")
+        entry = self._registry.get(workflow_id)
+        if entry is None:
+            raise WorkflowAccessError("Workflow not found.")
+        with self._checkpointer_factory(self._settings) as checkpointer:
+            graph = build_support_graph(self._dependencies(), checkpointer)
+            snapshot = graph.get_state(self._config(entry))
+            if not snapshot.next or "human_review_interrupt" not in snapshot.next:
+                raise WorkflowConflictError("Workflow is not waiting for human review.")
+            result = graph.invoke(Command(resume={"decision": decision}), config=self._config(entry))
+        return dict(result)
+
     def _invoke(self, entry: WorkflowRegistryEntry, state: SupportWorkflowState) -> SupportWorkflowState:
         with self._checkpointer_factory(self._settings) as checkpointer:
             graph = build_support_graph(self._dependencies(), checkpointer)

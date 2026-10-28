@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { OrderDetailsPage } from "./pages/OrderDetailsPage";
 import { TicketDetailsPage } from "./pages/TicketDetailsPage";
 import { TicketHistoryPage } from "./pages/TicketHistoryPage";
+import { SupportChatPage } from "./pages/SupportChatPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
         <Route path="/tickets" element={<TicketHistoryPage />} />
         <Route path="/tickets/:ticketId" element={<TicketDetailsPage />} />
+        <Route path="/support" element={<SupportChatPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,5 +1,9 @@
 
 from app.models.base import Base
+from app.models.admin_review import AdminReview
+from app.models.audit_event import AuditEvent
+from app.models.support_conversation import SupportConversation
+from app.models.support_message import SupportMessage
 from app.models.customer import Customer
 from app.models.order import Order
 from app.models.order_item import OrderItem
@@ -13,6 +17,10 @@ from app.models.user_session import UserSession
 
 __all__ = [
     "Base",
+    "AdminReview",
+    "AuditEvent",
+    "SupportConversation",
+    "SupportMessage",
     "Customer",
     "Order",
     "OrderItem",

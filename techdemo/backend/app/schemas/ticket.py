@@ -26,6 +26,7 @@ class TicketResponse(BaseModel):
     message: str
     status: str
     created_at: datetime
+    review_status: str | None = None
 
 
 class TicketListResponse(BaseModel):

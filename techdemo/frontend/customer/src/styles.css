@@ -699,6 +699,16 @@ h2 {
   font-size: 0.9rem;
 }
 
+.chat-card { max-width: 760px; }
+.chat-order-picker { display:grid; gap:7px; margin:20px 0; color:#273651; font-weight:650; }
+.chat-order-picker select { min-height:42px; border:1px solid #bdc9da; border-radius:9px; padding:8px; background:#fff; }
+.chat-transcript { display:grid; gap:12px; min-height:220px; max-height:460px; overflow:auto; padding:16px; border:1px solid #dce4f0; border-radius:14px; background:#f8faff; }
+.chat-message { max-width:88%; padding:12px 14px; border-radius:12px; background:#eaf2ff; color:#273651; }
+.chat-message-customer { justify-self:end; background:#1967d9; color:#fff; }
+.chat-message p { margin:5px 0 0; white-space:pre-wrap; line-height:1.45; }
+.chat-form { display:grid; gap:8px; margin-top:18px; }
+.chat-form textarea { min-height:96px; border:1px solid #bdc9da; border-radius:10px; padding:10px; resize:vertical; }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

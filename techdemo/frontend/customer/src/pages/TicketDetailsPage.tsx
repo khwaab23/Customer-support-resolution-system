@@ -117,6 +117,12 @@ export function TicketDetailsPage() {
                 <dt>Submitted</dt>
                 <dd>{formatTicketCreatedAt(ticket.created_at)}</dd>
               </div>
+              {ticket.review_status && (
+                <div>
+                  <dt>Review update</dt>
+                  <dd>{formatTicketStatus(ticket.review_status)}</dd>
+                </div>
+              )}
               <div className="ticket-message-detail">
                 <dt>Your message</dt>
                 <dd>{ticket.message}</dd>

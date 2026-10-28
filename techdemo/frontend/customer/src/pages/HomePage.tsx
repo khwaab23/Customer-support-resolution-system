@@ -83,6 +83,7 @@ export function HomePage() {
           </div>
           <div className="portal-actions">
             <Link className="text-link" to="/tickets">My support tickets</Link>
+            <Link className="text-link" to="/support">AI Support Chat</Link>
             <button
               type="button"
               className="text-button"

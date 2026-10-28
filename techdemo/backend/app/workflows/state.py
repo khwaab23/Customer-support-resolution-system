@@ -34,6 +34,14 @@ class SafeReviewInput(BaseModel):
     outcome: ReviewOutcome
 
 
+class AdminDecisionInput(BaseModel):
+    """Persisted, server-validated human decision supplied only by admin code."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str
+
+
 class ProposedResolution(BaseModel):
     """A factual proposal, never a mutable business decision or refund command."""
 

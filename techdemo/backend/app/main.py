@@ -7,7 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.auth.routes import router as auth_router
+from app.api.admin.routes import router as admin_router
 from app.api.customer.routes import router as customer_router
+from app.api.customer.chat_routes import router as customer_chat_router
 from app.core.database import get_db
 
 
@@ -15,7 +17,9 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(title="TechDemo API")
     app.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
+    app.include_router(admin_router, prefix="/v1/admin", tags=["admin"])
     app.include_router(customer_router, prefix="/v1/customer", tags=["customer"])
+    app.include_router(customer_chat_router, prefix="/v1/customer", tags=["customer-chat"])
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:
